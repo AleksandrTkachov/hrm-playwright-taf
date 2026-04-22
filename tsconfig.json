@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "Bundler", 
+    "target": "ESNext",
+    "module": "ESNext",
+    
+    "paths": {
+      "@pages/*": ["./pages/*"],
+      "@fixtures/*": ["./fixtures/*"],
+      "@managers/*": ["./managers/*"],
+      "@base/*": ["./pages/base_entities/*"]
+    },
+
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    
+    "types": ["node"]
+  }
+}
