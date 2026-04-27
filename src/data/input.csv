@@ -1,0 +1,5 @@
+"email","password","description"
+"kotofei.manul-odomashenny@innowise.com","agentCat47@","Успешный вход"
+"testEmail@innowise.com","wrongPassword","Неверный пароль"
+"invalid-email","pass","Неверный формат почты"
+"test@test.com","some_value", "Только корпоративные почты разрешены"
