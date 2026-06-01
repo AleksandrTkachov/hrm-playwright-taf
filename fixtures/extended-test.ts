@@ -11,7 +11,7 @@ interface ExtendedFixtures {
 // HELPERS
 // ==========================================
 
-// 1. Navigation & Paint Timings colletion
+// 1. Navigation & Paint Timings collection
 async function getAdvancedPerformanceMetrics(page: any) {
   try {
     return await page.evaluate(() => {
@@ -20,19 +20,14 @@ async function getAdvancedPerformanceMetrics(page: any) {
 
       if (!navigation) return null;
 
-      const fp =
-        paintEntries.find((e) => e.name === "first-paint")?.startTime || 0;
-      const fcp =
-        paintEntries.find((e) => e.name === "first-contentful-paint")
-          ?.startTime || 0;
+      const fp = paintEntries.find((e) => e.name === "first-paint")?.startTime || 0;
+      const fcp = paintEntries.find((e) => e.name === "first-contentful-paint")?.startTime || 0;
 
       return {
         ttfb: Math.round(navigation.responseStart - navigation.requestStart),
         fp: Math.round(fp),
         fcp: Math.round(fcp),
-        domReady: Math.round(
-          navigation.domContentLoadedEventEnd - navigation.fetchStart,
-        ),
+        domReady: Math.round(navigation.domContentLoadedEventEnd - navigation.fetchStart),
         loadTime: Math.round(navigation.loadEventEnd - navigation.fetchStart),
       };
     });
@@ -43,6 +38,9 @@ async function getAdvancedPerformanceMetrics(page: any) {
 
 // 2. Color grading according to Google standards
 function getMetricGrade(value: number, type: "ttfb" | "fcp" | "load"): string {
+  if (value < 0) return "⚪ N/A";
+  if (value === 0 && type === "fcp") return "🟢 GOOD";
+
   const thresholds = {
     ttfb: { good: 800, poor: 1800 },
     fcp: { good: 1800, poor: 3000 },
@@ -55,20 +53,31 @@ function getMetricGrade(value: number, type: "ttfb" | "fcp" | "load"): string {
 
 // 3. Text Waterfall Graph generating
 function generateWaterfallChart(m: any): string {
-  const maxTime = m.loadTime || 1;
+  const ttfb = Math.max(0, m.ttfb);
+  const fp = Math.max(0, m.fp);
+  const fcp = Math.max(0, m.fcp);
+  const domReady = Math.max(0, m.domReady);
+  const loadTime = Math.max(0, m.loadTime);
+
+  // Scale the graph by the largest component so that the proportions never exceed 100%.
+  const maxTime = Math.max(1, loadTime, ttfb, fp, fcp, domReady);
   const barLength = 25;
+
   const makeBar = (time: number) => {
-    const filled = Math.max(1, Math.round((time / maxTime) * barLength));
-    return "█".repeat(filled) + "░".repeat(barLength - filled);
+    const validTime = Math.max(0, time);
+    // Strictly limit the number of characters within the range from 0 to 25
+    const filled = Math.min(barLength, Math.max(0, Math.round((validTime / maxTime) * barLength)));
+    const empty = Math.max(0, barLength - filled);
+    return "█".repeat(filled) + "░".repeat(empty);
   };
 
   return [
-    `=== Страница: ${m.loadTime} ms общее время загрузки ===`,
-    `1. Ответ сервера (TTFB)   : [${makeBar(m.ttfb)}] ${m.ttfb} ms`,
-    `2. Первый макет (FP)      : [${makeBar(m.fp)}] ${m.fp} ms`,
-    `3. Отрисовка текста (FCP) : [${makeBar(m.fcp)}] ${m.fcp} ms`,
-    `4. Сборка DOM дерева      : [${makeBar(m.domReady)}] ${m.domReady} ms`,
-    `5. Полная загрузка (Load) : [${makeBar(m.loadTime)}] ${m.loadTime} ms`,
+    `=== Page: ${loadTime} ms total load time ===`,
+    `1. Server response (TTFB)   : [${makeBar(ttfb)}] ${ttfb} ms`,
+    `2. First Layout (FP)      : [${makeBar(fp)}] ${fp} ms`,
+    `3. Text rendering (FCP) : [${makeBar(fcp)}] ${fcp} ms`,
+    `4. Assembling the DOM tree      : [${makeBar(domReady)}] ${domReady} ms`,
+    `5. Full load : [${makeBar(loadTime)}] ${loadTime} ms`,
   ].join("\n");
 }
 
@@ -76,11 +85,10 @@ function generateWaterfallChart(m: any): string {
 function parseCoverageToTable(coverageEntries: any[]): string {
   const rows: string[] = [
     "┌────────────────────────────────────────────────────────┬─────────────┐",
-    "│ Название скрипта / Файла                               │ Покрытие %  │",
+    "│ Script/File Name                                       │ Coverage %  │",
     "├────────────────────────────────────────────────────────┼─────────────┤",
   ];
 
-  // Filter only application files (ignore browser extensions and system junk)
   const appEntries = coverageEntries.filter(
     (entry) =>
       entry.url.includes("sign-in") ||
@@ -95,7 +103,7 @@ function parseCoverageToTable(coverageEntries: any[]): string {
 
   for (const entry of appEntries) {
     const fileName = entry.url.split("/").pop()?.split("?")[0] || entry.url;
-    if (!fileName || fileName.startsWith("http")) continue; // Skipping external CDNs like Google Fonts
+    if (!fileName || fileName.startsWith("http")) continue;
 
     const truncatedName = fileName.padEnd(54).substring(0, 54);
 
@@ -112,16 +120,13 @@ function parseCoverageToTable(coverageEntries: any[]): string {
       }
     }
 
-    const percentage =
-      totalBytes > 0 ? Math.round((coveredBytes / totalBytes) * 100) : 0;
+    const percentage = totalBytes > 0 ? Math.round((coveredBytes / totalBytes) * 100) : 0;
     const percentageStr = `${percentage}%`.padStart(11);
 
     rows.push(`│ ${truncatedName} │ ${percentageStr} │`);
   }
 
-  rows.push(
-    "└────────────────────────────────────────────────────────┴─────────────┘",
-  );
+  rows.push("└────────────────────────────────────────────────────────┴─────────────┘");
   return rows.join("\n");
 }
 
@@ -130,18 +135,15 @@ function parseCoverageToTable(coverageEntries: any[]): string {
 // ==========================================
 
 export const test = base.extend<ExtendedFixtures>({
-  // Auto-initialization of the page manager
   pm: async ({ page }, use) => {
     const pm = new PageManager(page);
     await use(pm);
   },
 
-  // Implementing telemetry into the page fixture
   page: async ({ page }, use, testInfo) => {
     const consoleErrors: string[] = [];
     const networkErrors: string[] = [];
-    const isChromium =
-      page.context().browser()?.browserType().name() === "chromium";
+    const isChromium = page.context().browser()?.browserType().name() === "chromium";
 
     // --- BEFORE HOOKS ---
     if (isChromium) {
@@ -176,14 +178,10 @@ export const test = base.extend<ExtendedFixtures>({
     await use(page);
 
     // --- AFTER HOOKS ---
-
     try {
       await page.waitForLoadState("load", { timeout: 5000 });
     } catch {
-      // Log warnings only to the terminal console, and the test does not crash.
-      console.warn(
-        "⚠️ Web Vitals metrics not collected: page took longer than 5 seconds to load.",
-      );
+      console.warn("⚠️ Web Vitals metrics not collected: page took longer than 5 seconds to load.");
     }
 
     // 1. Web Vitals Processing
@@ -199,13 +197,10 @@ export const test = base.extend<ExtendedFixtures>({
       });
 
       const waterfall = generateWaterfallChart(metrics);
-      await testInfo.attach(
-        "📈 Waterfall Timeline",
-        {
-          body: waterfall,
-          contentType: "text/plain",
-        },
-      );
+      await testInfo.attach("📈 Waterfall Timeline", {
+        body: waterfall,
+        contentType: "text/plain",
+      });
     }
 
     // 2. Coverage
