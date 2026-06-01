@@ -154,3 +154,5 @@ logfile.log
 /junit-report/
 /xray/
 /coverage-results/
+/allure-report/
+/allure-results/
