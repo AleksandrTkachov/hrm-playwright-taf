@@ -6,7 +6,7 @@
     "test:stage": "dotenvx run -f env/.env.stage -- npx playwright test",
     "test:prod": "dotenvx run -f env/.env.prod -- npx playwright test",
     "test:ui": "dotenvx run -f env/.env.stage -- npx playwright test --ui",
-    "env:edit": "dotenvx set -f env/.env.stage"
+    "env:set:stage": "dotenvx set -f env/.env.stage"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +15,10 @@
   "devDependencies": {
     "@dotenvx/dotenvx": "^1.61.4",
     "@playwright/test": "^1.59.1",
-    "@types/node": "^25.6.0"
+    "@types/node": "^25.6.0",
+    "cross-env": "^10.1.0"
+  },
+  "dependencies": {
+    "csv-parse": "^6.2.1"
   }
 }

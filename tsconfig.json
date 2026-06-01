@@ -8,13 +8,17 @@
       "@pages/*": ["./pages/*"],
       "@fixtures/*": ["./fixtures/*"],
       "@managers/*": ["./managers/*"],
-      "@base/*": ["./pages/base_entities/*"]
+      "@base/*": ["./pages/base_entities/*"],
+      "@utils/*": ["./utils/*"]
     },
 
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
     
-    "types": ["node"]
+    "types": ["node"],
+
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   }
 }

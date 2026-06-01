@@ -153,3 +153,4 @@ logfile.log
 /blob-report/
 /junit-report/
 /xray/
+/coverage-results/
